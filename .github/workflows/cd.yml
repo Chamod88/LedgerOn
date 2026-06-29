@@ -1,0 +1,73 @@
+name: CD
+
+# Trigger when the CI workflow completes. We'll only run deploy for the `main` branch
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+jobs:
+  build-push-deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_TAG: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get ACR login server and export to env
+        id: acr
+        run: |
+          ACR_LOGIN_SERVER=$(az acr show --name ${{ secrets.ACR_NAME }} --query loginServer -o tsv)
+          echo "ACR_LOGIN_SERVER=$ACR_LOGIN_SERVER" >> $GITHUB_OUTPUT
+          echo "ACR_LOGIN_SERVER=$ACR_LOGIN_SERVER" >> $GITHUB_ENV
+
+      - name: Login Docker to ACR
+        run: az acr login --name ${{ secrets.ACR_NAME }}
+
+      - name: Build and push ledger-service image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ledger-service/Dockerfile
+          push: true
+          tags: |
+            ${{ env.ACR_LOGIN_SERVER }}/ledger-service:${{ env.IMAGE_TAG }}
+            ${{ env.ACR_LOGIN_SERVER }}/ledger-service:latest
+
+      - name: Build and push api-gateway image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: api-gateway/Dockerfile
+          push: true
+          tags: |
+            ${{ env.ACR_LOGIN_SERVER }}/api-gateway:${{ env.IMAGE_TAG }}
+            ${{ env.ACR_LOGIN_SERVER }}/api-gateway:latest
+
+      - name: Configure kubectl for AKS
+        uses: azure/aks-set-context@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          cluster-name: ${{ secrets.AKS_NAME }}
+          resource-group: ${{ secrets.AKS_RESOURCE_GROUP }}
+
+      - name: Prepare k8s manifests with new image tags
+        run: |
+          mkdir -p k8s-out
+          sed "s|azurecr.io/ledger-service:latest|${{ env.ACR_LOGIN_SERVER }}/ledger-service:${{ env.IMAGE_TAG }}|g" k8s/ledger-service.yaml > k8s-out/ledger-service.yaml
+          sed "s|azurecr.io/api-gateway:latest|${{ env.ACR_LOGIN_SERVER }}/api-gateway:${{ env.IMAGE_TAG }}|g" k8s/api-gateway.yaml > k8s-out/api-gateway.yaml
+          cp k8s/config.yaml k8s-out/config.yaml || true
+
+      - name: Deploy to AKS
+        run: |
+          kubectl apply -f k8s-out/config.yaml
+          kubectl apply -f k8s-out/ledger-service.yaml
+          kubectl apply -f k8s-out/api-gateway.yaml
+

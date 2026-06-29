@@ -1,0 +1,33 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.idea
+*.iml
+.vscode
+
+# Build artifacts (we rebuild inside Docker)
+**/target
+
+# Documentation
+*.md
+Documentations/
+Heavy Testings/
+
+# Docker (don't send compose into the image)
+docker-compose.yml
+docker-compose.override.yml
+
+# Deployment IaC
+deployment/
+
+# Python cache
+__pycache__/
+
+# Environment secrets (we inject at runtime, not build time)
+.env
+
+# Gemini agent
+.agents
