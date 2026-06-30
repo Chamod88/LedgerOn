@@ -42,6 +42,22 @@ class TransferRequest {
 
     @NotBlank(message = "transactionType is required")
     public String transactionType;
+
+    // Default constructor for JSON deserialization
+    public TransferRequest() {}
+
+    public TransferRequest(String accountId, BigDecimal amount, String currency, String transactionType) {
+        this.accountId = accountId;
+        this.amount = amount;
+        this.currency = currency;
+        this.transactionType = transactionType;
+    }
+
+    // Getters (optional but good practice for serialization)
+    public String getAccountId() { return accountId; }
+    public BigDecimal getAmount() { return amount; }
+    public String getCurrency() { return currency; }
+    public String getTransactionType() { return transactionType; }
 }
 
 @RestController
