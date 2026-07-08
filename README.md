@@ -139,16 +139,4 @@ Please write tests for correctness-critical behavior (transfers, idempotency, co
 - Experiment by adding more extensive integration tests that simulate duplicate messages, retries, and concurrency.
 - Explore transactional outbox patterns for safe Kafka publishing from DB transactions.
 
----
-
-## License
-
-Add a LICENSE file if you want an explicit license. This repository does not include one by default.
-
----
-
-If you'd like I can also:
-- add a simple CI pipeline config,
-- add a LICENSE file (MIT/Apache-2.0),
-- or tune the README to emphasize specific learning steps.
 
