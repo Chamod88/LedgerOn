@@ -33,5 +33,5 @@ build/
 .vscode/
 
 ### Environment secrets — never commit ###
-.env
+config/.env
 docker-compose.override.yml

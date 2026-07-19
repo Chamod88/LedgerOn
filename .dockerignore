@@ -14,7 +14,7 @@
 # Documentation
 *.md
 Documentations/
-Heavy Testings/
+TESTING & QUALITY/
 
 # Docker (don't send compose into the image)
 docker-compose.yml
@@ -27,7 +27,7 @@ deployment/
 __pycache__/
 
 # Environment secrets (we inject at runtime, not build time)
-.env
+config/.env
 
 # Gemini agent
 .agents
