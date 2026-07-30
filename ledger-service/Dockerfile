@@ -13,6 +13,7 @@ COPY pom.xml .
 # 2. Copy both module POMs (Maven needs all modules defined in parent POM)
 COPY ledger-service/pom.xml ledger-service/pom.xml
 COPY api-gateway/pom.xml api-gateway/pom.xml
+COPY fraud-engine/pom.xml fraud-engine/pom.xml
 
 # 3. Fix Windows line endings and download dependencies (cached if POMs don't change)
 RUN sed -i 's/\r$//' mvnw && chmod +x mvnw && ./mvnw dependency:go-offline -pl ledger-service -am -B

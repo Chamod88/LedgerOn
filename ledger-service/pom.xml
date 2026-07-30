@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.ledger</groupId>
+        <groupId>com.paytrust</groupId>
         <artifactId>ledger-parent</artifactId>
         <version>1.0.0</version>
         <relativePath>../pom.xml</relativePath>
