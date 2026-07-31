@@ -27,7 +27,7 @@ deployment/
 __pycache__/
 
 # Environment secrets (we inject at runtime, not build time)
-.env
+config/.env
 
 # Gemini agent
 .agents

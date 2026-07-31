@@ -1,3 +1,5 @@
+Github Repo - (https://github.com/Chamod88/LedgerOn.git)
+
 # High-Throughput Financial Ledger Microservice
 
 A highly concurrent, fault-tolerant financial ledger system inspired by the architectures of Stripe and PayPal. 
@@ -58,7 +60,9 @@ This project demonstrates how to handle financial transactions at scale without 
 ### Security
 * **Zero-Trust Network:** Mutual TLS via Service Mesh (Linkerd)
   - All internal microservice communication requires cryptographic certificate verification
-  - Protects against compromised containers, identity spoofing, and data interception
+  - Automatic mTLS injection without code changes
+  - Traffic encryption across the internal network
+  - Identity verification preventing container spoofing attacks
 
 ## 📦 Complete Technology Stack
 
@@ -295,7 +299,7 @@ dotnet test
 
 1. Create a feature branch: `git checkout -b feature/my-feature`
 2. Make changes and commit: `git commit -am "Add my feature"`
-3. Push to repository: `git push origin feature/my-feature`
+3. Push to repository: `git push origin feature/my-my-feature`
 4. Open a Pull Request on GitHub
 5. GitHub Actions automatically runs tests and validates infrastructure
 6. Merge to `main` to trigger production deployment
@@ -328,10 +332,9 @@ docker-compose up -d
 * [Event Sourcing Pattern](https://martinfowler.com/eaaDev/EventSourcing.html) - Martin Fowler's guide
 * [Idempotent Microservices](https://microservices.io/patterns/idempotent.html) - Idempotency best practices
 * [Azure Bicep Documentation](https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/)
-* [GitHub Actions Documentation](https://docs.github.com/en/actions)
+* [GitHub Actions Documentation](https://docs.github.com/en-us/actions)
 * [Linkerd Service Mesh](https://linkerd.io/2.15/overview/)
 
 ## 📄 License
 
 This project is provided as-is for educational and commercial use.
-
