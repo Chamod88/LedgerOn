@@ -14,7 +14,7 @@
 # Documentation
 *.md
 Documentations/
-TESTING & QUALITY/
+Heavy Testings/
 
 # Docker (don't send compose into the image)
 docker-compose.yml
