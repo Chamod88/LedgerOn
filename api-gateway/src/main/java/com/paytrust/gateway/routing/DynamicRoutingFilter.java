@@ -45,11 +45,7 @@ public class DynamicRoutingFilter extends OncePerRequestFilter {
             targetBaseUrl = userServiceUrl;
         } else if (requestURI.startsWith("/api/v1/payments")) {
             targetBaseUrl = paymentServiceUrl;
-        } else if (requestURI.startsWith("/api/v1/ledger")) {
-            // Note: our own gateway controller also listens on /api/v1/ledger/transfer
-            // We'll proxy anything else or let local handle it if we want.
-            // For now, if we have a local controller, we skip routing to avoid loop if it's the same port,
-            // but the properties point to 8080 (Ledger Service) while gateway is 8082.
+        } else if (requestURI.startsWith("/api/v1/ledger") && !requestURI.equals("/api/v1/ledger/transfer")) {
             targetBaseUrl = ledgerServiceUrl;
         }
 

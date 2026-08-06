@@ -51,7 +51,7 @@ services:
 
   ledger-service:
     build:
-      context: .
+      context: ..
       dockerfile: ledger-service/Dockerfile
     ports:
       - "${LEDGER_SERVICE_PORT:-8081}:8081"
@@ -74,7 +74,7 @@ services:
 
   api-gateway:
     build:
-      context: .
+      context: ..
       dockerfile: api-gateway/Dockerfile
     ports:
       - "${API_GATEWAY_PORT:-8082}:8082"
@@ -85,6 +85,7 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: ledger-kafka:29092
       SPRING_DATA_REDIS_HOST: redis
       ROUTES_FRAUD_SERVICE: http://fraud-engine:8083
+      ROUTES_LEDGER_SERVICE: http://ledger-service:8081
     depends_on:
       postgres:
         condition: service_healthy
@@ -103,10 +104,10 @@ services:
 
   fraud-engine:
     build:
-      context: .
+      context: ..
       dockerfile: fraud-engine/Dockerfile
     ports:
-      - "8083:8083"
+      - "${FRAUD_SERVICE_PORT:-9083}:8083"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}

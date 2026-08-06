@@ -35,3 +35,8 @@ build/
 ### Environment secrets — never commit ###
 config/.env
 docker-compose.override.yml
+
+### Python ###
+__pycache__/
+*.py[cod]
+*$py.class

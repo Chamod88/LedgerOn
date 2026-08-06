@@ -6,6 +6,8 @@ import com.paytrust.fraud.dto.FeedbackRequest;
 import com.paytrust.fraud.dto.FraudScoreRequest;
 import com.paytrust.fraud.dto.FraudScoreResponse;
 import com.paytrust.fraud.repository.FraudCaseRepository;
+import com.paytrust.fraud.service.FeatureStoreService;
+import com.paytrust.fraud.service.OnnxInferenceService;
 import com.paytrust.fraud.service.RuleEngineService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -26,6 +28,8 @@ public class FraudController {
 
     private static final Logger log = LoggerFactory.getLogger(FraudController.class);
     private final RuleEngineService ruleEngineService;
+    private final FeatureStoreService featureStoreService;
+    private final OnnxInferenceService onnxInferenceService;
     private final FraudCaseRepository fraudCaseRepository;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -33,9 +37,13 @@ public class FraudController {
     private static final String DUPLICATE_CACHE_PREFIX = "fraud:duplicate:";
 
     public FraudController(RuleEngineService ruleEngineService,
+                           FeatureStoreService featureStoreService,
+                           OnnxInferenceService onnxInferenceService,
                            FraudCaseRepository fraudCaseRepository,
                            StringRedisTemplate redisTemplate) {
         this.ruleEngineService = ruleEngineService;
+        this.featureStoreService = featureStoreService;
+        this.onnxInferenceService = onnxInferenceService;
         this.fraudCaseRepository = fraudCaseRepository;
         this.redisTemplate = redisTemplate;
     }
@@ -59,20 +67,74 @@ public class FraudController {
                 }
             }
 
-            // 2. Evaluate rules
+            // 2. Feature Assembly for 12-Dimension Vector
+            java.math.BigDecimal userAvgAmount = featureStoreService.getUserAverageAmount(request.accountId);
+            if (userAvgAmount == null || userAvgAmount.compareTo(java.math.BigDecimal.ZERO) == 0) {
+                userAvgAmount = request.amount;
+            }
+            double amountToAvgRatio = request.amount.doubleValue() / Math.max(1.0, userAvgAmount.doubleValue());
+
+            long velocity1h = featureStoreService.getTransactionVelocity(request.accountId, 3600);
+            long velocity24h = featureStoreService.getTransactionVelocity(request.accountId, 86400);
+
+            java.time.LocalDateTime now = java.time.LocalDateTime.now();
+            int hour = now.getHour();
+            int isWeekend = (now.getDayOfWeek().getValue() >= 6) ? 1 : 0;
+            int isInternational = (request.country != null && !"USA".equalsIgnoreCase(request.country)) ? 1 : 0;
+
+            float[] featureVector = new float[] {
+                request.amount.floatValue(),
+                (float) velocity1h,
+                (float) velocity24h,
+                userAvgAmount.floatValue(),
+                (float) amountToAvgRatio,
+                (float) hour,
+                (float) isWeekend,
+                30.0f, // device_fingerprint_age_days
+                (float) isInternational,
+                180.0f, // account_age_days
+                0.0f,   // failed_attempts_1h
+                5.0f    // distance_from_home_km
+            };
+
+            // 3. Rule Engine Evaluation
             RuleEngineService.RuleResult ruleResult = ruleEngineService.evaluateRules(
                     request.accountId,
                     request.amount,
                     request.country
             );
 
-            double score = ruleResult.decision == RuleEngineService.RuleDecision.DECLINE ? 1.0 :
-                    (ruleResult.decision == RuleEngineService.RuleDecision.REVIEW ? 0.5 : 0.0);
+            // 4. ONNX ML Model Inference Evaluation
+            float mlFraudProb = onnxInferenceService.predictFraudProbability(featureVector);
+            log.info("ONNX ML Fraud Probability: {} for account: {}", mlFraudProb, request.accountId);
+
+            String finalDecision;
+            String finalReason;
+            double finalScore;
+
+            if (ruleResult.decision == RuleEngineService.RuleDecision.DECLINE) {
+                finalDecision = "DECLINE";
+                finalReason = ruleResult.reason;
+                finalScore = 1.0;
+            } else if (mlFraudProb >= 0.70f) {
+                finalDecision = "DECLINE";
+                finalReason = String.format("High ML Fraud Probability (Score: %.2f)", mlFraudProb);
+                finalScore = mlFraudProb;
+            } else if (mlFraudProb >= 0.40f || ruleResult.decision == RuleEngineService.RuleDecision.REVIEW) {
+                finalDecision = "REVIEW";
+                finalReason = ruleResult.decision == RuleEngineService.RuleDecision.REVIEW ?
+                        ruleResult.reason : String.format("Elevated ML Fraud Risk (Score: %.2f)", mlFraudProb);
+                finalScore = mlFraudProb;
+            } else {
+                finalDecision = "APPROVE";
+                finalReason = "Transaction passed deterministic rules and ML risk scoring";
+                finalScore = mlFraudProb;
+            }
 
             FraudScoreResponse response = new FraudScoreResponse(
-                    ruleResult.decision.name(),
-                    ruleResult.reason,
-                    score
+                    finalDecision,
+                    finalReason,
+                    finalScore
             );
 
             // 3. Save Case in PostgreSQL
