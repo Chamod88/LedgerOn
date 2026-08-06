@@ -82,8 +82,8 @@ class GatewayController {
         this.objectMapper = objectMapper;
         
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(100);
-        factory.setReadTimeout(100);
+        factory.setConnectTimeout(2000);
+        factory.setReadTimeout(2000);
         this.restTemplate = new RestTemplate(factory);
     }
 
@@ -136,7 +136,7 @@ class GatewayController {
                         "country", request.getCurrency().equals("USD") ? "USA" : "INTERNATIONAL"
                 );
 
-                log.info("Sending transaction to fraud-engine for real-time scoring...");
+                log.info("Sending transaction to fraud-engine at URL [{}/v1/fraud/score]...", fraudServiceUrl);
                 ResponseEntity<Map> scoringResponse = restTemplate.postForEntity(
                         fraudServiceUrl + "/v1/fraud/score",
                         scoringPayload,

@@ -27,7 +27,7 @@ RUN ./mvnw package -pl fraud-engine -am -DskipTests -B
 # ============================================
 # Stage 2: RUN \u2014 tiny runtime image
 # ============================================
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre-jammy
 
 WORKDIR /app
 

@@ -5,20 +5,19 @@ moved project's full documentations to another for clean structre and token savi
 Fraud Detection Service Integration Fullguide :
 "C:\Users\ASUS\Documents\Chamod Music\PayTrust Docs\ONGOING\Fraud Engine Integration Scope for LedgerO.md"
 
-**Last Updated:** 2026-08-05  
-**Current Focus:** Prepare and execute server/container deployment (Docker Compose & Cloud).  
+**Last Updated:** 2026-08-06  
+**Current Focus:** Ready for Cloud/Server Remote Deployment.  
 **Blocker:** None  
 
-**Today's Accomplishments (2026-08-05):**  
-- **Completed Phase 2 (Python XGBoost + ONNX Java Integration)**:
-  1. Built synthetic dataset generator using `Faker` and `numpy` (`synthetic_fraud_dataset.csv`: 10,000 transactions, 12 feature dimensions).
-  2. Trained XGBoost classifier (`ROC-AUC: 1.0000`, `Precision: 1.0000`, `Recall: 1.0000`, `F1: 1.0000`).
-  3. Exported XGBoost model to `fraud_model.onnx` and verified inference with ONNX Runtime.
-  4. Added `com.microsoft.onnxruntime:onnxruntime:1.17.1` to `fraud-engine/pom.xml` and created `OnnxInferenceService.java`.
-  5. Updated `FraudController.java` to assemble the 12-dimension feature vector from Redis `FeatureStoreService` and evaluate real-time ONNX ML risk scores.
-  6. Verified complete Java integration with `OnnxInferenceServiceTest.java` (8/8 Maven unit tests passed).
+**Today's Accomplishments (2026-08-06):**  
+- **Completed Live Multi-Container Stack Launch & End-to-End Verification**:
+  1. Configured non-conflicting Docker ports (`api-gateway`: 9082, `fraud-engine`: 9083, `ledger-service`: 9081, `redis`: 9784, `postgres`: 5432, `kafka`: 9092) to bypass Windows Hyper-V port exclusions.
+  2. Solved ONNX Runtime native C++ library loading on Alpine Linux by using `eclipse-temurin:17-jre-jammy` (glibc Ubuntu base image).
+  3. **Verified E2E Legitimate Transaction ($150.00)**: API Gateway scored synchronously with `fraud-engine` in **10 ms** (ONNX risk score `0.0004` $\rightarrow$ `APPROVE`), returning HTTP `202 ACCEPTED` ("QUEUED").
+  4. **Verified E2E Event Streaming & Feature Store**: Kafka event was consumed by `fraud-engine` to update real-time Redis velocity counters (`tx_velocity_1h`, `user_avg_amount_24h`).
+  5. **Verified E2E Fraud Interception ($60,000.00)**: Intercepted synchronously in **10 ms** by rule `CRITICAL_AMOUNT_LIMIT`, returning HTTP `403 FORBIDDEN` (`FRAUD_DECLINED`).
+  6. **Verified Redis Idempotency Replay**: Repeated request was blocked immediately from Redis cache without hitting downstream services.
 
-**Next Session (Tomorrow):**  
-1. Spin up full multi-container stack via `docker-compose up --build`.
-2. Conduct live end-to-end transaction test from API Gateway (`/api/v1/ledger/transfer`) to `fraud-engine` (Rules + ONNX ML Inference) to `ledger-service` / Redis / Kafka.
-3. Configure server/cloud deployment workflow (VPS / Azure Container Apps / CI/CD pipeline).
+**Next Step (Tomorrow):**  
+1. Deploy project stack to remote cloud server / VPS (AWS / Azure / DigitalOcean / Hetzner).
+2. Configure domain SSL certificates and production CI/CD environment variables.
